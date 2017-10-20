@@ -482,10 +482,14 @@ EOF
 	        echo; echo "Installing the vendor driver into: ${run_opengl_driver}"
 	        nix_build_options='--no-build-output --max-jobs 4 --cores 0'
 	        # NIX_PATH=nixpkgs=${arg_nixpkgs} ${nix_build} ${nix_build_options} ${tmpnix} ${arg_verbose:+-v}
-	        sudo NIX_PATH=nixpkgs=${arg_nixpkgs} ${nix_build} ${nix_build_options} ${tmpnix} ${arg_verbose:+-v} \
-                     --out-link ${run_opengl_driver} \
-                     --drv-link ${run_opengl_driver_drvref}
+	        tmpoutlink=`mktemp -d`
+	        NIX_PATH=nixpkgs=${arg_nixpkgs} ${nix_build} ${nix_build_options} ${tmpnix} ${arg_verbose:+-v} \
+                     --drv-link ${run_opengl_driver_drvref} \
+                     --out-link ${tmpoutlink}/result
+	        sudo ln -sfL ${tmpoutlink}/result ${run_opengl_driver}
 	        rm -f ${tmpnix}
+		rm -f ${tmpoutlink}/result
+		rmdir ${tmpoutlink}
                 run_opengl_driver_drv=`realpath -e ${run_opengl_driver_drvref} || true`
                 vendorgl_deriv=`nix-store --query --references ${run_opengl_driver_drv} | grep $(nixpkgs_vendorgl_package_id)`
                 vendorgl_deriv_hash=`echo ${vendorgl_deriv} | cut -c12- | cut -d- -f1`
